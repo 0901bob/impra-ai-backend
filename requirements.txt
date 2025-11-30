@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+openai
+firebase-admin
+python-dotenv
+python-multipart
+pillow
+pytesseract
+numpy

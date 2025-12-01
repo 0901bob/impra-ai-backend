@@ -3,6 +3,24 @@
 from datetime import datetime, timedelta
 from app.firebase_utils import get_user_expenses
 
+
+def _to_amount(value) -> float:
+    """把 Firestore 讀出的 amount 安全轉成 float。"""
+    if value is None:
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return 0.0
+        try:
+            return float(value)
+        except ValueError:
+            return 0.0
+    return 0.0
+
+
 # ----- 1. 每日支出折線圖 -----
 def get_daily_stats(user_id: str):
     expenses = get_user_expenses(user_id)
@@ -10,10 +28,13 @@ def get_daily_stats(user_id: str):
 
     for exp in expenses:
         date = exp.get("date")
-        amount = exp.get("amount") or 0
+        amount = _to_amount(exp.get("amount"))
 
-        if date:
-            daily[date] = daily.get(date, 0) + amount
+        if not date:
+            continue
+
+        # 這裡不需要轉 datetime，直接用字串當 key 即可
+        daily[date] = daily.get(date, 0.0) + amount
 
     # 排序後輸出
     return [
@@ -29,9 +50,9 @@ def get_category_stats(user_id: str):
 
     for exp in expenses:
         cat = exp.get("category") or "其他"
-        amount = exp.get("amount") or 0
+        amount = _to_amount(exp.get("amount"))
 
-        cat_total[cat] = cat_total.get(cat, 0) + amount
+        cat_total[cat] = cat_total.get(cat, 0.0) + amount
 
     return [
         {"category": cat, "total": total}
@@ -49,16 +70,22 @@ def get_week_compare_stats(user_id: str):
 
     expenses = get_user_expenses(user_id)
 
-    this_week = 0
-    last_week = 0
+    this_week = 0.0
+    last_week = 0.0
 
     for exp in expenses:
         date_str = exp.get("date")
         if not date_str:
             continue
 
-        amount = exp.get("amount") or 0
-        date = datetime.strptime(date_str, "%Y-%m-%d")
+        amount = _to_amount(exp.get("amount"))
+
+        # 假設 date 是 "2025-12-01" 這種格式
+        try:
+            date = datetime.strptime(date_str, "%Y-%m-%d")
+        except Exception:
+            # 如果格式怪怪的就略過
+            continue
 
         # 本週
         if date >= start_of_week:

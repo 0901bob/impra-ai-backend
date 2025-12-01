@@ -284,19 +284,3 @@ async def ocr_vision(file: UploadFile = File(...), user_id: str = Body(None)):
     finally:
         os.remove(tmp_path)
         
-
-@app.post("/test_add_expense")
-async def test_add_expense(data: dict):
-    user_id = data.get("user_id")
-    if not user_id:
-        return {"error": "缺少 user_id"}
-
-    expense = {
-        "date": data.get("date"),
-        "store": data.get("store"),
-        "product_name": data.get("product_name"),
-        "amount": data.get("amount")
-    }
-
-    save_user_expense(user_id, expense)
-    return {"message": f"✅ 已將支出寫入 Firestore：users/{user_id}/expenses"}

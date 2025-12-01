@@ -11,20 +11,21 @@ CATEGORY_DESCRIPTIONS = {
 }
 
 def classify_product(product_name: str):
-    """使用 Embedding 語意相似度分類。"""
+    """使用 Embedding 語意相似度分類（正式版）。"""
     input_vec = get_embedding(product_name)
     scores = {}
+
     for category, desc in CATEGORY_DESCRIPTIONS.items():
         cat_vec = get_embedding(desc)
         scores[category] = cosine_similarity(input_vec, cat_vec)
+
     best = max(scores, key=scores.get)
-    # 轉成普通 float（避免 numpy.float 序列化問題）
-    scores = {k: float(v) for k, v in scores.items()}
-    
+    confidence = float(scores[best])
+
     return {
-        "product_name": product_name,
+        "input": product_name,
         "category": best,
-        "confidence": float(scores[best]),  # 取最佳類別分數
-        "scores": scores
-}
+        "confidence": confidence
+    }
+
 

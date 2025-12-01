@@ -284,3 +284,12 @@ async def ocr_vision(file: UploadFile = File(...), user_id: str = Body(None)):
     finally:
         os.remove(tmp_path)
         
+# ===== Render / Local 執行入口 =====
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8000)),
+        reload=False
+    )

@@ -304,6 +304,14 @@ def stats_category(user_id: str):
 @app.get("/stats/week_compare")
 def stats_week_compare(user_id: str):
     return get_week_compare_stats(user_id)
+
+# ====== AI 月度分析 ======
+from app.analysis_service import monthly_analysis
+
+@app.get("/analysis/monthly", summary="AI 月度消費分析 + 預測")
+def analysis_monthly(user_id: str):
+    return monthly_analysis(user_id)
+
         
 # ===== Render / Local 執行入口 =====
 if __name__ == "__main__":

@@ -305,14 +305,42 @@ def stats_category(user_id: str):
 def stats_week_compare(user_id: str):
     return get_week_compare_stats(user_id)
 
-# ====== AI 月度分析 ======
-from app.analysis_service import monthly_analysis
 
-@app.get("/analysis/monthly", summary="AI 月度消費分析 + 預測")
-def analysis_monthly(user_id: str):
-    return monthly_analysis(user_id)
+# ===== AI 月度分析（ChatGPT 完整版） =====
 
-        
+from app.firebase_utils import get_user_expenses
+from app.ai_utils import call_openai_chat
+import json
+
+@app.get("/analysis/monthly_ai", summary="AI 月度消費分析 + 預測（ChatGPT 版）")
+def monthly_ai(user_id: str):
+
+    expenses = get_user_expenses(user_id)
+    if not expenses:
+        return {"error": "查無此使用者的消費資料", "user_id": user_id}
+
+    prompt = f"""
+你是一位專業的 AI 財務分析師，請根據以下「使用者消費資料」生成完整月度分析：
+
+(1) 本月消費總結（重點 3–5 點，簡短精準）
+(2) 異常消費（若無則寫「無明顯異常」）
+(3) 依照消費趨勢，預測下個月的平均每日支出
+(4) 給出兩句高度個人化、務實的理財建議
+
+請根據以下資料進行分析：
+{json.dumps(expenses, ensure_ascii=False)}
+"""
+
+    reply = call_openai_chat(
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=500
+    )
+
+    return {
+        "user_id": user_id,
+        "analysis": reply
+    }
+
 # ===== Render / Local 執行入口 =====
 if __name__ == "__main__":
     import uvicorn

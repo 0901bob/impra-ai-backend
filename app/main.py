@@ -19,6 +19,11 @@ from app.ocr_service import extract_invoice_data
 from app.firebase_utils import init_firebase, save_user_expense
 from app.advice_service import generate_financial_advice
 from app.chat_service import handle_chat_request
+from app.stats_service import (
+    get_daily_stats,
+    get_category_stats,
+    get_week_compare_stats
+)
 
 app = FastAPI(
     title="IMPRA AI Backend",
@@ -283,6 +288,22 @@ async def ocr_vision(file: UploadFile = File(...), user_id: str = Body(None)):
         return {"error": f"{type(e).__name__}: {str(e)}"}
     finally:
         os.remove(tmp_path)
+        
+# ----- 統計 API -----
+
+@app.get("/stats/daily")
+def stats_daily(user_id: str):
+    return get_daily_stats(user_id)
+
+
+@app.get("/stats/category")
+def stats_category(user_id: str):
+    return get_category_stats(user_id)
+
+
+@app.get("/stats/week_compare")
+def stats_week_compare(user_id: str):
+    return get_week_compare_stats(user_id)
         
 # ===== Render / Local 執行入口 =====
 if __name__ == "__main__":

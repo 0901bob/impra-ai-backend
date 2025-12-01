@@ -179,24 +179,39 @@ class ChatRequest(BaseModel):
     message: str
     mode: str = "auto"  # chat / advice / auto
 
+
+@app.get("/ping")
+def ping():
+    return {"status": "alive"}
+
+
+import asyncio
+from fastapi import HTTPException
+
+async def run_chat_async(user_id: str, message: str, mode: str):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None,
+        lambda: handle_chat_request(user_id, message, mode)
+    )
+
+
 @app.post("/chat", summary="Chat Endpoint")
 async def chat_endpoint(req: ChatRequest):
-    """
-    Chat + 理財建議端點。
 
-    回傳格式：
-    {
-      "user_id": "...",
-      "mode": "chat" 或 "advice",
-      "summary": "最近 5 筆消費摘要",
-      "reply": "AI 回覆文字"
-    }
-    """
     try:
-        reply = handle_chat_request(req.user_id, req.message, req.mode)
+        reply = await asyncio.wait_for(
+            run_chat_async(req.user_id, req.message, req.mode),
+            timeout=25
+        )
         return reply
+
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="AI 回覆逾時，請稍後再試")
+
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 # ===== OpenAI Vision OCR =====
@@ -268,7 +283,7 @@ async def ocr_vision(file: UploadFile = File(...), user_id: str = Body(None)):
         return {"error": f"{type(e).__name__}: {str(e)}"}
     finally:
         os.remove(tmp_path)
-
+        
 
 @app.post("/test_add_expense")
 async def test_add_expense(data: dict):

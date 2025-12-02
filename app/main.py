@@ -341,12 +341,6 @@ def monthly_ai(user_id: str):
         "analysis": reply
     }
 
-from app.stats_service import get_category_stats
-
-
-@app.get("/stats/category")
-def category_stats(user_id: str):
-    return get_category_stats(user_id)
 
 
 # ===== Render / Local 執行入口 =====
